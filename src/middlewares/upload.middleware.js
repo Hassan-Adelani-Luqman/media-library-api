@@ -4,9 +4,16 @@ import crypto from 'node:crypto';
 import multer from 'multer';
 import { config } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
+import { logger } from '../config/logger.js';
 
 const uploadDir = path.join(process.cwd(), config.uploadDir);
-fs.mkdirSync(uploadDir, { recursive: true });
+
+try {
+  fs.mkdirSync(uploadDir, { recursive: true });
+} catch (err) {
+  // Vercel's filesystem is read-only outside /tmp — see docs/vercel-deployment.md.
+  logger.warn('Could not create upload directory', { uploadDir, reason: err.message });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),

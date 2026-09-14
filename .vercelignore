@@ -1,0 +1,9 @@
+tests/
+postman/
+docs/
+coverage/
+uploads/
+uploads-test/
+.env.development
+.env.test
+.github/
