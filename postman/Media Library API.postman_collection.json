@@ -1,0 +1,378 @@
+{
+  "info": {
+    "_postman_id": "b6f2a9f0-3c1e-4b7a-9c1a-8e7f2d4c6a11",
+    "name": "Media Library API",
+    "description": "CRUD + health check coverage for the Media Library API. Uses {{BASE_URL}} and {{MEDIA_ID}} environment variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has health fields', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('ok');",
+              "    pm.expect(json).to.have.property('uptime');",
+              "    pm.expect(json).to.have.property('timestamp');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/health",
+          "host": ["{{BASE_URL}}"],
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Media - valid upload (201)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has success structure', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.expect(json.data).to.be.an('object');",
+              "});",
+              "",
+              "pm.test('Data contains required media fields', function () {",
+              "    const data = pm.response.json().data;",
+              "    ['id', 'filePath', 'originalName', 'mimeType', 'fileSize', 'title', 'tags', 'category'].forEach((field) => {",
+              "        pm.expect(data).to.have.property(field);",
+              "    });",
+              "});",
+              "",
+              "if (pm.response.code === 201) {",
+              "    pm.environment.set('MEDIA_ID', pm.response.json().data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "title", "value": "Sample Title", "type": "text" },
+            { "key": "category", "value": "image", "type": "text" },
+            { "key": "tags", "value": "sample,test", "type": "text" },
+            { "key": "file", "type": "file", "src": [], "description": "Attach a jpeg/png/pdf under 5MB" }
+          ]
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/media",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Media - missing title (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('Response has error structure', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('error');",
+              "    pm.expect(json.message).to.eql('Validation failed');",
+              "    pm.expect(json.details).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Details flag the missing title field', function () {",
+              "    const details = pm.response.json().details;",
+              "    pm.expect(details.some((d) => d.field === 'title')).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "category", "value": "image", "type": "text" },
+            { "key": "file", "type": "file", "src": [], "description": "Attach a jpeg/png/pdf under 5MB" }
+          ]
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/media",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Media (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has success structure with results and pagination', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.expect(json.data.results).to.be.an('array');",
+              "    ['total', 'page', 'limit', 'totalPages'].forEach((field) => {",
+              "        pm.expect(json.data.pagination).to.have.property(field);",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/media?page=1&limit=10",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Media By Id - valid (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Returns the requested media record', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.expect(json.data.id).to.eql(pm.environment.get('MEDIA_ID'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/media/{{MEDIA_ID}}",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media", "{{MEDIA_ID}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Media By Id - not found (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 404', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test('Response has error structure', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('error');",
+              "    pm.expect(json.message).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/media/non-existent-id",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media", "non-existent-id"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Media - valid (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Title was updated', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.expect(json.data.title).to.eql('Updated Title via Postman');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Title via Postman\"\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/media/{{MEDIA_ID}}",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media", "{{MEDIA_ID}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Media - invalid body (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('Response has error structure', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('error');",
+              "    pm.expect(json.message).to.eql('Validation failed');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": \"not-a-real-category\"\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/media/{{MEDIA_ID}}",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media", "{{MEDIA_ID}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Media - valid (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has success structure with null data', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.expect(json.data).to.be.null;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/media/{{MEDIA_ID}}",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media", "{{MEDIA_ID}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Media - not found (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 404', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test('Response has error structure', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/media/{{MEDIA_ID}}",
+          "host": ["{{BASE_URL}}"],
+          "path": ["media", "{{MEDIA_ID}}"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
