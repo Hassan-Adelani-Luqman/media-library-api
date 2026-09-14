@@ -1,4 +1,7 @@
 node_modules/
 uploads/*
 !uploads/.gitkeep
-.env
+uploads-test/
+coverage/
+.env*
+!.env.example
