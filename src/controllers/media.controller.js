@@ -1,6 +1,7 @@
 import { mediaService } from '../services/media.service.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
+import { logger } from '../config/logger.js';
 
 export const mediaController = {
   createMedia: catchAsync(async (req, res) => {
@@ -14,6 +15,7 @@ export const mediaController = {
     };
 
     const media = await mediaService.createMedia(fileMeta, req.validated.body);
+    logger.info('File uploaded', { id: media.id, originalName: media.originalName, fileSize: media.fileSize });
     res.status(201).json({ status: 'success', data: media });
   }),
 

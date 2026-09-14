@@ -1,18 +1,17 @@
 import app from './src/app.js';
 import { config } from './src/config/env.js';
+import { logger } from './src/config/logger.js';
 
 process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION! Shutting down...');
-  console.error(err.name, err.message);
+  logger.error('Uncaught exception, shutting down', { reason: err.message, stack: err.stack });
   process.exit(1);
 });
 
 const server = app.listen(config.port, () => {
-  console.log(`Media Library API running on port ${config.port}`);
+  logger.info('Server started', { port: config.port, env: config.nodeEnv });
 });
 
 process.on('unhandledRejection', (err) => {
-  console.error('UNHANDLED REJECTION! Shutting down...');
-  console.error(err.name, err.message);
+  logger.error('Promise rejection, shutting down', { reason: err.message, stack: err.stack });
   server.close(() => process.exit(1));
 });
